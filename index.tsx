@@ -18,8 +18,7 @@ import {
   Loader2,
   ChevronRight,
   ChevronLeft,
-  Printer,
-  Maximize2
+  Printer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -62,14 +61,7 @@ const translations = {
     mapLoading: "Loading Map...",
     translatingTrip: "Translating your trip...",
     translationError: "Sorry, could not translate the trip details. Please try again.",
-    switchLang: "English",
-    viewFullImage: "View full image",
-    highResImage: "High-resolution visual",
-    clickToExpand: "Click or tap to view full size",
-    expand: "Expand",
-    collageFitBanner: "Cinematic Banner",
-    collageFitContain: "Fit Full Image",
-    close: "Close"
+    switchLang: "English"
   },
   he: {
     title: "מתכנן הטיולים של Yuda AI",
@@ -108,14 +100,7 @@ const translations = {
     mapLoading: "טוען מפה...",
     translatingTrip: "מתרגם את הטיול שלך...",
     translationError: "מצטערים, לא ניתן היה לתרגם את פרטי הטיול. אנא נסה שוב.",
-    switchLang: "עברית",
-    viewFullImage: "הצג תמונה מלאה",
-    highResImage: "תמונה ברזולוציה גבוהה",
-    clickToExpand: "לחץ או הקש לצפייה בתמונה מלאה",
-    expand: "הרחב",
-    collageFitBanner: "כרזה קולנועית",
-    collageFitContain: "התאם תמונה מלאה",
-    close: "סגור"
+    switchLang: "עברית"
   }
 };
 
@@ -579,9 +564,6 @@ const App = () => {
     const [savedTrips, setSavedTrips] = useState<SavedTrip[]>([]);
     const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
     const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
-    const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-    const [imageFitMode, setImageFitMode] = useState<'cover' | 'contain'>('cover');
-    const [isInIframe, setIsInIframe] = useState(false);
 
     const t = useCallback((key: keyof typeof translations.en) => {
         return translations[language][key] || translations.en[key];
@@ -591,14 +573,6 @@ const App = () => {
         document.documentElement.lang = language;
         document.documentElement.dir = language === 'he' ? 'rtl' : 'ltr';
     }, [language]);
-
-    useEffect(() => {
-        try {
-            setIsInIframe(typeof window !== 'undefined' && window.self !== window.top);
-        } catch {
-            setIsInIframe(false);
-        }
-    }, []);
     
     useEffect(() => {
         try {
@@ -955,7 +929,7 @@ const App = () => {
                 }
             } catch (imgErr) {
                 console.error("Image generation failed, using fallback:", imgErr);
-                setCollageImageUrl(`https://picsum.photos/seed/${encodeURIComponent(destination)}/1280/720`);
+                setCollageImageUrl(`https://picsum.photos/seed/${encodeURIComponent(destination)}/1200/400`);
             }
 
             setLoadingMessage(t('loadingMsg3'));
@@ -1010,58 +984,6 @@ const App = () => {
             onClose={() => setIsLoadModalOpen(false)}
             t={t}
           />
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {isImageModalOpen && collageImageUrl && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsImageModalOpen(false)}
-            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative max-w-5xl w-full bg-gray-900 rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col"
-            >
-              <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-white/10 bg-gray-900/90">
-                <div className="flex items-center gap-2 text-white">
-                  <span className="font-bold text-sm sm:text-base">{displayDestination || destination}</span>
-                  <span className="text-xs text-gray-400 font-normal hidden xs:inline">({t('highResImage')})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setImageFitMode(prev => prev === 'cover' ? 'contain' : 'cover')}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/10 transition-colors hidden sm:inline-flex items-center gap-1.5"
-                  >
-                    {imageFitMode === 'cover' ? t('collageFitContain') : t('collageFitBanner')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsImageModalOpen(false)}
-                    className="p-1.5 sm:p-2 text-gray-400 hover:text-white rounded-xl hover:bg-white/10 transition-colors"
-                    aria-label={t('close')}
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-              </div>
-              <div className="p-2 sm:p-4 bg-black/90 flex items-center justify-center max-h-[80vh] overflow-hidden">
-                <img
-                  src={collageImageUrl}
-                  alt={`Artistic collage for ${destination}`}
-                  crossOrigin="anonymous"
-                  referrerPolicy="no-referrer"
-                  className="max-h-[75vh] w-auto max-w-full object-contain rounded-lg shadow-2xl"
-                />
-              </div>
-            </motion.div>
-          </motion.div>
         )}
       </AnimatePresence>
       <div className="container mx-auto p-4 sm:p-6 lg:p-12 max-w-7xl font-sans text-gray-900 overflow-x-hidden">
@@ -1171,58 +1093,15 @@ const App = () => {
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className={`collage-container mb-8 sm:mb-12 lg:mb-16 p-2 sm:p-3 bg-white rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl overflow-hidden border border-gray-100 relative group transition-all duration-300 ${
-                      isInIframe ? 'max-w-4xl mx-auto' : ''
-                    }`}
+                    className="collage-container mb-16 p-3 bg-white rounded-3xl shadow-2xl overflow-hidden"
                   >
-                     <div 
-                       className={`relative w-full overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-tr from-gray-900 via-gray-800 to-indigo-950 flex items-center justify-center cursor-pointer transition-all duration-300 ${
-                         isInIframe 
-                           ? 'aspect-[16/9] sm:aspect-[2/1] max-h-[250px] sm:max-h-[300px]' 
-                           : 'aspect-[16/9] sm:aspect-[18/9] md:aspect-[21/9] max-h-[220px] xs:max-h-[260px] sm:max-h-[340px] md:max-h-[420px] lg:max-h-[460px]'
-                       }`}
-                       onClick={() => setIsImageModalOpen(true)}
-                       title={t('viewFullImage')}
-                     >
-                        <img 
-                          src={collageImageUrl} 
-                          alt={`Artistic collage for ${destination}`} 
-                          crossOrigin="anonymous"
-                          referrerPolicy="no-referrer"
-                          className={`w-full h-full transition-transform duration-700 group-hover:scale-[1.015] ${
-                            imageFitMode === 'contain' ? 'object-contain' : 'object-cover object-center'
-                          }`}
-                        />
-                        
-                        {/* Hover Overlay with Destination Tag and Expand Prompt */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex flex-col justify-between p-3 sm:p-5 text-white">
-                            <div className="flex justify-between items-center w-full">
-                                <span className="text-xs font-semibold px-2.5 py-1 bg-black/50 backdrop-blur-md rounded-lg border border-white/20 shadow-sm">
-                                    {displayDestination || destination}
-                                </span>
-                                <span className="inline-flex items-center text-xs font-bold px-3 py-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl border border-white/30 gap-1.5 pointer-events-auto">
-                                  <Maximize2 size={13} /> {t('viewFullImage')}
-                                </span>
-                            </div>
-                            <div className="text-xs text-white/90 font-medium drop-shadow-sm">
-                                {t('clickToExpand')}
-                            </div>
-                        </div>
-
-                        {/* Mobile & Touch quick expand badge */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setIsImageModalOpen(true);
-                          }}
-                          className="sm:hidden absolute bottom-2.5 ltr:right-2.5 rtl:left-2.5 z-10 px-2.5 py-1.5 bg-black/65 backdrop-blur-md text-white rounded-xl border border-white/20 active:scale-95 shadow-lg flex items-center gap-1.5 text-[11px] font-bold"
-                          aria-label={t('viewFullImage')}
-                        >
-                          <Maximize2 size={12} />
-                          <span>{t('expand')}</span>
-                        </button>
-                     </div>
+                     <img 
+                       src={collageImageUrl} 
+                       alt={`Artistic collage for ${destination}`} 
+                       crossOrigin="anonymous"
+                       referrerPolicy="no-referrer"
+                       className="w-full h-[300px] sm:h-[500px] object-cover rounded-2xl" 
+                     />
                   </motion.div>
                 )}
                 
