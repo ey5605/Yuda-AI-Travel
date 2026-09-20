@@ -4,6 +4,8 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import { GoogleGenAI, Type } from "@google/genai";
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas-pro';
 import { 
   MapPin, 
   Utensils, 
@@ -17,7 +19,8 @@ import {
   Globe,
   Loader2,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  Printer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -41,6 +44,7 @@ const translations = {
     saveTrip: "Save This Trip",
     exportPdf: "Export as PDF",
     exportingPdf: "Exporting PDF...",
+    printTrip: "Print / Save PDF",
     tripSaved: "Trip saved successfully!",
     yourTripTo: "Your trip to",
     placesToVisit: "Places to Visit",
@@ -79,6 +83,7 @@ const translations = {
     saveTrip: "שמור את הטיול",
     exportPdf: "ייצא כ-PDF",
     exportingPdf: "מייצא PDF...",
+    printTrip: "הדפס / שמור כ-PDF",
     tripSaved: "הטיול נשמר בהצלחה!",
     yourTripTo: "הטיול שלך ל",
     placesToVisit: "מקומות לביקור",
@@ -297,7 +302,13 @@ const LocationCard: React.FC<LocationCardProps> = ({ location, colorClass, t }) 
         >
             <div className="grid grid-cols-2 gap-px bg-gray-200 h-48 sm:h-56">
                 <div className="bg-white relative group overflow-hidden">
-                    <img src={location.images[0]?.imageUrl || 'https://picsum.photos/seed/location1/350/250'} alt={location.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"/>
+                    <img 
+                      src={location.images[0]?.imageUrl || 'https://picsum.photos/seed/location1/350/250'} 
+                      alt={location.name} 
+                      crossOrigin="anonymous"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
                     {location.images[0]?.pageUrl && location.images[0].pageUrl !== '#' && (
                        <a href={location.images[0].pageUrl} target="_blank" rel="noopener noreferrer" className="absolute bottom-0 left-0 right-0 bg-black/50 text-[10px] text-white py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm flex items-center justify-center gap-1">
                            {t('source')} <ExternalLink size={10} />
@@ -305,7 +316,13 @@ const LocationCard: React.FC<LocationCardProps> = ({ location, colorClass, t }) 
                    )}
                 </div>
                 <div className="bg-white relative group overflow-hidden">
-                    <img src={location.images[1]?.imageUrl || 'https://picsum.photos/seed/location2/350/250'} alt={location.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"/>
+                    <img 
+                      src={location.images[1]?.imageUrl || 'https://picsum.photos/seed/location2/350/250'} 
+                      alt={location.name} 
+                      crossOrigin="anonymous"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
                     {location.images[1]?.pageUrl && location.images[1].pageUrl !== '#' && (
                        <a href={location.images[1].pageUrl} target="_blank" rel="noopener noreferrer" className="absolute bottom-0 left-0 right-0 bg-black/50 text-[10px] text-white py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm flex items-center justify-center gap-1">
                           {t('source')} <ExternalLink size={10} />
@@ -714,6 +731,10 @@ const App = () => {
         localStorage.setItem('yuda-travel-plans', JSON.stringify(updatedTrips));
     };
 
+    const handlePrintTrip = () => {
+        window.print();
+    };
+
     const handleExportPdf = async () => {
         const printableContent = document.querySelector('.printable-content') as HTMLElement;
         if (!printableContent || isExporting) {
@@ -724,15 +745,18 @@ const App = () => {
         setError(null);
 
         try {
-            const { jsPDF } = (window as any).jspdf;
-            const html2canvas = (window as any).html2canvas;
-
             const canvas = await html2canvas(printableContent, {
                 scale: 2,
                 useCORS: true,
+                allowTaint: false,
+                logging: false,
+                backgroundColor: '#ffffff',
+                ignoreElements: (element) => {
+                    return element.id === 'trip-actions' || element.getAttribute('role') === 'alert';
+                }
             });
 
-            const imgData = canvas.toDataURL('image/png');
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
 
             const pdf = new jsPDF({
                 orientation: 'portrait',
@@ -740,32 +764,41 @@ const App = () => {
                 format: 'a4',
             });
 
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const margin = 8;
+            const contentWidth = pageWidth - (margin * 2);
+            const contentHeight = pageHeight - (margin * 2);
 
-            const ratio = canvasWidth / canvasHeight;
-            const imgHeight = pdfWidth / ratio;
+            const imgHeight = contentWidth * (canvas.height / canvas.width);
             let heightLeft = imgHeight;
             let position = 0;
 
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-            heightLeft -= pdfHeight;
+            pdf.addImage(imgData, 'JPEG', margin, margin + position, contentWidth, imgHeight);
+            heightLeft -= contentHeight;
 
             while (heightLeft > 0) {
-                position -= pdfHeight;
+                position -= contentHeight;
                 pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-                heightLeft -= pdfHeight;
+                pdf.addImage(imgData, 'JPEG', margin, margin + position, contentWidth, imgHeight);
+                heightLeft -= contentHeight;
             }
 
-            const fileName = `Yuda-AI-Trip-${destination || 'Plan'}.pdf`.replace(/[^a-zA-Z0-9_.-]/g, '_');
+            const cleanDest = (displayDestination || destination || 'Plan')
+                .trim()
+                .replace(/[^a-zA-Z0-9\u0590-\u05FF_-]/g, '_');
+            const fileName = `Yuda-Trip-${cleanDest}.pdf`;
             pdf.save(fileName);
 
-        } catch (err) {
-            console.error("PDF Export Error:", err);
-            setError("An error occurred while exporting your trip to PDF. Please try again.");
+        } catch (err: any) {
+            console.error("PDF Export Error, opening print fallback:", err);
+            try {
+                window.print();
+            } catch (printErr) {
+                setError(language === 'he' 
+                    ? `שגיאה בייצוא ה-PDF (${err?.message || ''}). ניתן להשתמש בהדפסה כ-PDF מהדפדפן.`
+                    : `Error exporting PDF (${err?.message || ''}). You can use browser print to save as PDF.`);
+            }
         } finally {
             setIsExporting(false);
         }
@@ -1058,7 +1091,13 @@ const App = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     className="collage-container mb-16 p-3 bg-white rounded-3xl shadow-2xl overflow-hidden"
                   >
-                     <img src={collageImageUrl} alt={`Artistic collage for ${destination}`} className="w-full h-[300px] sm:h-[500px] object-cover rounded-2xl" />
+                     <img 
+                       src={collageImageUrl} 
+                       alt={`Artistic collage for ${destination}`} 
+                       crossOrigin="anonymous"
+                       referrerPolicy="no-referrer"
+                       className="w-full h-[300px] sm:h-[500px] object-cover rounded-2xl" 
+                     />
                   </motion.div>
                 )}
                 
@@ -1076,6 +1115,9 @@ const App = () => {
                       <button onClick={handleExportPdf} disabled={isExporting} className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-bold rounded-2xl shadow-lg shadow-indigo-200 text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 disabled:bg-indigo-300 transition-all">
                         {isExporting ? <Loader2 className="animate-spin mr-2" size={18} /> : <Download className="ltr:mr-2 rtl:ml-2" size={18} />}
                         {isExporting ? t('exportingPdf') : t('exportPdf')}
+                      </button>
+                      <button onClick={handlePrintTrip} type="button" className="inline-flex items-center px-6 py-3 border border-gray-200 text-sm font-bold rounded-2xl shadow-sm text-gray-700 bg-white hover:bg-gray-50 active:scale-95 transition-all">
+                        <Printer className="ltr:mr-2 rtl:ml-2 text-indigo-500" size={18} /> {t('printTrip')}
                       </button>
                   </div>
                 </div>
