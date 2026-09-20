@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yuda AI Travel Planner</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+      @keyframes fadeInOut {
+        0%, 100% { opacity: 0; transform: translateY(-20px); }
+        10%, 90% { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in-out {
+        animation: fadeInOut 3s ease-in-out forwards;
+      }
+      
+      @media print {
+        /* General Resets */
+        body {
+          margin: 0;
+          padding: 1rem;
+          background-color: #fff !important;
+          font-size: 11pt;
+          -webkit-print-color-adjust: exact;
+          color-adjust: exact;
+        }
+
+        /* Hide non-printable elements */
+        header, 
+        #trip-form-section, 
+        #trip-actions, 
+        #map-overview, 
+        #loading-indicator,
+        #error-message,
+        .image-source-link,
+        [aria-modal="true"] {
+          display: none !important;
+        }
+
+        /* Main container adjustments */
+        .container {
+          padding: 0 !important;
+          margin: 0 !important;
+          max-width: 100% !important;
+          background-color: transparent !important;
+        }
+        
+        /* Printable content block adjustments */
+        .printable-content {
+          box-shadow: none !important;
+          border: none !important;
+          margin-top: 0 !important;
+        }
+
+        /* Collage specific styling */
+        .collage-container {
+          box-shadow: none !important;
+          transform: none !important;
+          padding: 0 !important;
+          border: 1px solid #e5e7eb;
+          page-break-after: always; /* Start itinerary on a new page */
+        }
+        
+        #trip-visualization h2 {
+           font-size: 24pt !important;
+        }
+
+        /* Card styling */
+        .location-card {
+          page-break-inside: avoid !important;
+          box-shadow: none !important;
+          transform: none !important;
+          border: 1px solid #e5e7eb;
+        }
+        .location-card p {
+            height: auto !important; /* Allow description to have full height */
+        }
+        
+        /* Grid layout for print */
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          gap: 1.5rem !important;
+        }
+
+        /* Avoid breaks inside headings */
+        h2, h3 {
+          page-break-after: avoid !important;
+        }
+
+        /* Remove "external link" icons and underlines from links */
+        a {
+            text-decoration: none !important;
+            color: inherit !important;
+        }
+        a svg {
+            display: none !important;
+        }
+        a[href]:after {
+          content: "" !important;
+        }
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "@react-google-maps/api": "https://aistudiocdn.com/@react-google-maps/api@^2.19.3"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-gray-100">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
