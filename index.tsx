@@ -610,14 +610,19 @@ const App = () => {
             });
 
             try {
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+                const apiKey = (process.env.API_KEY || process.env.GEMINI_API_KEY || '') as string;
+                if (!apiKey) {
+                    console.warn("Gemini API key is not configured for translation.");
+                    return;
+                }
+                const ai = new GoogleGenAI({ apiKey });
                 const sourceLangName = generationLanguage === 'he' ? 'Hebrew' : 'English';
                 const targetLangName = language === 'he' ? 'Hebrew' : 'English';
 
                 const prompt = `Translate this JSON of travel data from ${sourceLangName} to ${targetLangName}. Maintain keys exactly. Return JSON only.\n\n${JSON.stringify(textsToTranslate)}`;
 
                 const response = await ai.models.generateContent({
-                    model: "gemini-3-flash-preview",
+                    model: "gemini-3.8-flash",
                     contents: prompt,
                     config: {
                         responseMimeType: "application/json",
@@ -780,7 +785,15 @@ const App = () => {
         setTranslatedData(null);
 
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+            const apiKey = (process.env.API_KEY || process.env.GEMINI_API_KEY || '') as string;
+            if (!apiKey) {
+                setError(language === 'he' 
+                    ? 'מפתח Gemini API אינו מוגדר. אנא ודא שהוספת את המפתח GEMINI_API_KEY ב-GitHub Secrets ובצע Build/Deploy מחדש.' 
+                    : 'Gemini API key is not configured. Please ensure GEMINI_API_KEY is added to GitHub Secrets and re-run deployment.');
+                setLoading(false);
+                return;
+            }
+            const ai = new GoogleGenAI({ apiKey });
             
             setLoadingMessage(t('loadingMsg1'));
             const langInstruction = `IMPORTANT: The entire response, including all names and descriptions, must be in ${language === 'he' ? 'Hebrew' : 'English'}.`;
@@ -836,7 +849,7 @@ const App = () => {
             };
             
             const response = await ai.models.generateContent({
-                model: "gemini-3-flash-preview",
+                model: "gemini-3.8-flash",
                 contents: prompt,
                 config: {
                     responseMimeType: "application/json",
@@ -853,7 +866,7 @@ const App = () => {
             try {
                 // Image generation
                 const imageResponse = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash-image',
+                    model: 'gemini-3.1-flash-image',
                     contents: {
                         parts: [
                             { text: imagePrompt }
@@ -916,7 +929,8 @@ const App = () => {
 
         } catch (err: any) {
             console.error("Error generating travel plan:", err);
-            setError(t('errorContent'));
+            const detailMsg = err?.message ? ` (${err.message})` : '';
+            setError(`${t('errorContent')}${detailMsg}`);
             setLoading(false);
         }
     };
