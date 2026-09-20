@@ -99,9 +99,33 @@
         }
       }
     </style>
+    <script>
+      window.global = window;
+      window.process = window.process || { env: {} };
+      window.addEventListener('error', function(event) {
+        var loader = document.getElementById('app-boot-loader');
+        if (loader) {
+          loader.innerHTML = '<div style="max-width: 520px; margin: 40px auto; padding: 24px; background: white; border-radius: 20px; border: 1px solid #fee2e2; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center; font-family: system-ui, sans-serif;">' +
+            '<div style="font-size: 40px; margin-bottom: 12px;">⚠️</div>' +
+            '<h2 style="color: #991b1b; margin: 0 0 8px 0; font-size: 20px; font-weight: bold;">שגיאה בטעינת האפליקציה</h2>' +
+            '<p style="color: #4b5563; font-size: 14px; margin: 0 0 16px 0; line-height: 1.5;">' + (event.message || 'An error occurred while loading the app scripts.') + '</p>' +
+            '<button onclick="window.location.reload()" style="background: #4f46e5; color: white; border: none; padding: 10px 24px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 14px;">טען מחדש / Reload</button>' +
+          '</div>';
+        }
+      });
+    </script>
   </head>
   <body class="bg-gray-100">
-    <div id="root"></div>
+    <div id="root">
+      <div id="app-boot-loader" style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: system-ui, sans-serif; background-color: #f8fafc; color: #4f46e5; text-align: center; padding: 20px;">
+        <div style="width: 44px; height: 44px; border: 4px solid #e0e7ff; border-top-color: #4f46e5; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px;"></div>
+        <p style="font-weight: 800; font-size: 18px; color: #1e293b; margin: 0;">טוען את מתכנן הטיולים של יודא...</p>
+        <p style="font-size: 13px; color: #64748b; margin-top: 6px;">Loading Yuda AI Travel Planner...</p>
+      </div>
+    </div>
+    <style>
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

@@ -27,14 +27,26 @@ export default defineConfig(({ mode }) => {
       process.env.GOOGLE_MAP_API_KEY ||
       process.env.VITE_GOOGLE_MAPS_API_KEY ||
       '';
+    const repoFromEnv = process.env.GITHUB_REPOSITORY ? process.env.GITHUB_REPOSITORY.split('/')[1] : '';
+    const base = process.env.BASE_URL || (repoFromEnv
+      ? (repoFromEnv.endsWith('.github.io') ? '/' : `/${repoFromEnv}/`)
+      : './');
+
     return {
-      base: './',
+      base,
       server: {
         port: 3000,
         host: '0.0.0.0',
       },
       plugins: [tailwindcss(), react()],
       define: {
+        'global': 'window',
+        'process.env': JSON.stringify({
+          NODE_ENV: mode,
+          API_KEY: geminiKey,
+          GEMINI_API_KEY: geminiKey,
+          GOOGLE_MAPS_API_KEY: mapsKey
+        }),
         'process.env.API_KEY': JSON.stringify(geminiKey),
         'process.env.GEMINI_API_KEY': JSON.stringify(geminiKey),
         'process.env.GOOGLE_MAPS_API_KEY': JSON.stringify(mapsKey),

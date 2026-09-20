@@ -4,8 +4,6 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import { GoogleGenAI, Type } from "@google/genai";
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas-pro';
 import { 
   MapPin, 
   Utensils, 
@@ -745,13 +743,19 @@ const App = () => {
         setError(null);
 
         try {
+            const [{ jsPDF }, html2canvasModule] = await Promise.all([
+                import('jspdf'),
+                import('html2canvas-pro')
+            ]);
+            const html2canvas: any = (html2canvasModule as any).default || html2canvasModule;
+
             const canvas = await html2canvas(printableContent, {
                 scale: 2,
                 useCORS: true,
                 allowTaint: false,
                 logging: false,
                 backgroundColor: '#ffffff',
-                ignoreElements: (element) => {
+                ignoreElements: (element: Element) => {
                     return element.id === 'trip-actions' || element.getAttribute('role') === 'alert';
                 }
             });
@@ -1196,8 +1200,65 @@ const App = () => {
   );
 };
 
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState = { hasError: false, error: null };
+  public props: ErrorBoundaryProps;
+
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.props = props;
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Application Error caught by ErrorBoundary:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6 text-center">
+          <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
+            <div className="text-4xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">משהו השתבש בטעינה</h2>
+            <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+              {this.state.error?.message || "An unexpected error occurred while rendering the application."}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg hover:bg-indigo-700 transition-all active:scale-95 text-sm"
+            >
+              טען מחדש / Reload App
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 const rootElement = document.getElementById('root');
 if (rootElement) {
     const root = ReactDOM.createRoot(rootElement);
-    root.render(<React.StrictMode><App /></React.StrictMode>);
+    root.render(
+      <React.StrictMode>
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      </React.StrictMode>
+    );
 }
