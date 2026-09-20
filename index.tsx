@@ -1,6 +1,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
+import './index.css';
 import { GoogleGenAI, Type } from "@google/genai";
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import { 
@@ -348,8 +349,9 @@ const ICONS = {
 };
 
 const TripMap: React.FC<TripMapProps> = ({ plan, t }) => {
+    const apiKey = (process.env.GOOGLE_MAPS_API_KEY || '') as string;
     const { isLoaded, loadError } = useJsApiLoader({
-        googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY as string,
+        googleMapsApiKey: apiKey,
     });
     const [activeMarker, setActiveMarker] = useState<Location | null>(null);
     const mapRef = useRef<any | null>(null);
@@ -385,8 +387,8 @@ const TripMap: React.FC<TripMapProps> = ({ plan, t }) => {
         };
     };
 
-    if (loadError) return <div className="p-4 text-center text-red-600 bg-red-100 rounded-lg">{t('mapError')}</div>;
-    if (!isLoaded) return <div className="p-4 text-center">{t('mapLoading')}</div>;
+    if (!apiKey || loadError) return <div className="p-8 text-center text-amber-800 bg-amber-50 rounded-2xl border border-amber-200 font-medium">{t('mapError')}</div>;
+    if (!isLoaded) return <div className="p-8 text-center text-gray-500 font-medium">{t('mapLoading')}</div>;
     
     return (
         <GoogleMap mapContainerStyle={mapContainerStyle} onLoad={onLoad} onUnmount={onUnmount} options={{disableDefaultUI: true, zoomControl: true}}>
